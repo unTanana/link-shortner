@@ -22,3 +22,21 @@ if (!getApps().length) {
 }
 
 export { firestoreDb };
+
+export const getUrlBySlug = async (
+  shortcode: string
+): Promise<string | undefined> => {
+  const urlSnapshot = await firestoreDb
+    .collection("links")
+    .where("shortcode", "==", shortcode)
+    .get();
+  if (urlSnapshot.empty) {
+    return;
+  }
+
+  const docs = urlSnapshot.docs;
+  const firstMatch = docs[0]?.data()?.url;
+  return firstMatch;
+};
+
+export type GetUrlBySlug = typeof getUrlBySlug;

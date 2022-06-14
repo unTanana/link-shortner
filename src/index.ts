@@ -21,9 +21,12 @@ app.get("/", (req: Request, res: Response) => {
 });
 
 app.get("/:shortcode", async (req: Request, res: Response) => {
+  console.time("Get Url time");
   const shortcode = req.params.shortcode;
   if (!shortcode) {
     res.status(400).send("Bad Request");
+    console.timeEnd("Get Url time");
+    return;
   }
 
   const fullUrl = await getUrlAndIncrementCountFactory({
@@ -32,41 +35,60 @@ app.get("/:shortcode", async (req: Request, res: Response) => {
 
   if (fullUrl) {
     if (fullUrl.startsWith("http")) {
-      return res.redirect(fullUrl);
+      res.redirect(fullUrl);
+      console.timeEnd("Get Url time");
+      return;
     }
-    return res.redirect(`https://${fullUrl}`);
+    res.redirect(`https://${fullUrl}`);
+    console.timeEnd("Get Url time");
+    return;
   }
 
   res.status(404).send("Not Found");
+  console.timeEnd("Get Url time");
+  return;
 });
 
 app.get("/:shortcode/stats", async (req: Request, res: Response) => {
+  console.time("Stats time");
   const shortcode = req.params.shortcode;
   if (!shortcode) {
     res.status(400).send("Bad Request");
+    console.timeEnd("Stats time");
+    return;
   }
+
   const urlStats = await getUrlStatsFactory({ getUrlStats })(shortcode);
 
   if (!urlStats) {
     res.status(404).send("Not Found");
+    console.timeEnd("Stats time");
+    return;
   }
 
-  return res.json(urlStats);
+  res.json(urlStats);
+  console.timeEnd("Stats time");
+  return;
 });
 
 app.post("/shorten", async (req: Request, res: Response) => {
+  console.time("Shorten time");
   const url = req.body.url;
   console.log("url:", url);
   if (!url) {
-    return res.status(400).send("Bad Request");
+    res.status(400).send("Bad Request");
+    console.timeEnd("Shorten time");
+    return;
   }
 
   const shortcode = req.body.shortcode;
-  if (shortcode && !shortcode.match(/^[a-zA-Z0-9]{6}$/)) {
-    return res.status(422).send("Shortcode doesn't meet criteria");
+  if (shortcode && !shortcode.match(/^[0-9a-zA-Z_]{4,}$/)) {
+    res.status(422).send("Shortcode doesn't meet criteria");
+    console.timeEnd("Shorten time");
+    return;
   }
 
-  return await shortenUrlFactory({
+  await shortenUrlFactory({
     getLinkBySlug,
     createLink,
   })({
@@ -74,6 +96,8 @@ app.post("/shorten", async (req: Request, res: Response) => {
     shortcode,
     res,
   });
+  console.timeEnd("Shorten time");
+  return;
 });
 
 app.listen(port, () => {
